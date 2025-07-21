@@ -2,63 +2,100 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Warm-up & Working-Set Calculator</title>
+<title>Set Calculator</title>
 <style>
-  body {font-family: system-ui, sans-serif; margin: 2rem; background:#f8f9fa;}
-  h1   {margin-bottom: .5rem;}
-  input, button {
-    padding:.6rem 1rem; font-size:1rem; border:1px solid #ccc; border-radius:6px;
-  }
-  .grid {display:grid; gap:.75rem; max-width:420px;}
-  .result {background:#fff; padding:.8rem 1rem; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,.06);}
-  .label {font-weight:600;}
+  body{font-family:system-ui, sans-serif; margin:2rem; background:#f8f9fa;}
+  h2{margin:1.5rem 0 .5rem;}
+  input,button{padding:.6rem 1rem; font-size:1rem; border:1px solid #ccc; border-radius:6px;}
+  .grid{display:grid; gap:.75rem; max-width:420px;}
+  .result{background:#fff; padding:.8rem 1rem; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .label{font-weight:600;}
 </style>
 </head>
 <body>
 
-<h1>Set Calculator</h1>
+<!--‑‑──────── Classic Lift Calculator ────────‑‑-->
+<h2>Barbell Warm‑up / Working Sets</h2>
 <div class="grid">
-  <label>
-    <span class="label">First working set&nbsp;(lbs or kg):</span><br/>
+  <label><span class="label">First working‑set weight:</span><br/>
     <input id="inputWeight" type="number" min="1" placeholder="e.g. 185">
   </label>
   <button id="calcBtn">Calculate</button>
-
   <div id="output"></div>
 </div>
 
+<!--‑‑──────── Weighted Pull‑up Calculator ────────‑‑-->
+<h2>Weighted Pull‑up Sets</h2>
+<div class="grid">
+  <label><span class="label">Your body‑weight:</span><br/>
+    <input id="pullBody" type="number" min="1" placeholder="e.g. 150">
+  </label>
+  <label><span class="label">Belt weight for Work Set 1:</span><br/>
+    <input id="pullBelt1" type="number" min="0" placeholder="e.g. 20">
+  </label>
+  <button id="pullBtn">Calculate Pull‑ups</button>
+  <div id="pullOutput"></div>
+</div>
+
 <script>
-function roundUp5(x){return Math.round(x/5)*5;}
+/*— shared helpers —*/
+const roundUp5 = x => Math.ceil(x/5)*5;
+const line = (n,w,bw,rep) =>
+  `<div class="result"><span class="label">${n}</span> → ${w} lb `+
+  (bw!==null?`<small>(belt ${bw<0?0:bw} lb)</small>`:'')
+  + (rep?` &nbsp;•&nbsp; ${rep} reps`:'') +`</div>`;
 
-function buildLine(name, wt){
-  return `<div class="result"><span class="label">${name}</span>  →  ${wt} </div>`;
-}
-
-function calc(){
-  const w1 = parseFloat(document.getElementById('inputWeight').value);
-  if(!w1){document.getElementById('output').innerHTML=''; return;}
-
-  const warm1 = roundUp5(w1*0.60);
-  const warm2 = roundUp5(w1*0.75);
-  const warm3 = roundUp5(w1*0.90);
-
+/*— original barbell logic —*/
+function calcBar() {
+  const w1 = +document.getElementById('inputWeight').value;
+  if(!w1) {document.getElementById('output').innerHTML=''; return;}
+  const warms=[0.60,0.75,0.90].map(p=>roundUp5(w1*p));
   const work2 = roundUp5(w1*0.90);
   const work3 = roundUp5(work2*0.90);
-
-  const html = [
-    buildLine('Warm-up 1 (60 %)', warm1),
-    buildLine('Warm-up 2 (75 %)', warm2),
-    buildLine('Warm-up 3 (90 %)', warm3),
-    buildLine('Work Set 1', w1),
-    buildLine('Work Set 2 (-10 %)', work2),
-    buildLine('Work Set 3 (-10 %)', work3),
+  document.getElementById('output').innerHTML = [
+    line('Warm‑up 1 (60 %)',warms[0],null),
+    line('Warm‑up 2 (75 %)',warms[1],null),
+    line('Warm‑up 3 (90 %)',warms[2],null),
+    line('Work Set 1',w1,null),
+    line('Work Set 2 (‑10 %)',work2,null),
+    line('Work Set 3 (‑10 %)',work3,null),
   ].join('');
-
-  document.getElementById('output').innerHTML = html;
 }
 
-document.getElementById('calcBtn').addEventListener('click', calc);
-document.getElementById('inputWeight').addEventListener('keyup', e => {if(e.key==='Enter') calc();});
+/*— new pull‑up logic —*/
+function calcPullups() {
+  const bw = +document.getElementById('pullBody').value;
+  const belt1 = +document.getElementById('pullBelt1').value;
+  if(!bw && bw!==0) {document.getElementById('pullOutput').innerHTML=''; return;}
+
+  const w1Total = roundUp5(bw + belt1);
+  const warm1Total = bw;                       // body‑weight only
+  const warm2Total = roundUp5(w1Total/2);      // half of W1 total
+  const warm2Belt  = warm2Total - bw;
+
+  const w2Total = roundUp5(w1Total*0.90);
+  const belt2   = Math.max(0, w2Total - bw);
+
+  const w3Total = roundUp5(w2Total*0.90);
+  const belt3   = Math.max(0, w3Total - bw);
+
+  document.getElementById('pullOutput').innerHTML = [
+    line('Warm‑up 1', warm1Total, 0, 5),
+    line('Warm‑up 2', warm2Total, warm2Belt, 3),
+    line('Work Set 1', w1Total, belt1, 5),
+    line('Work Set 2', w2Total, belt2, 6),
+    line('Work Set 3', w3Total, belt3, 8),
+  ].join('');
+}
+
+/*— wire‑up buttons —*/
+document.getElementById('calcBtn').addEventListener('click',calcBar);
+document.getElementById('inputWeight').addEventListener('keyup',e=>e.key==='Enter'&&calcBar());
+
+document.getElementById('pullBtn').addEventListener('click',calcPullups);
+['pullBody','pullBelt1'].forEach(id=>{
+  document.getElementById(id).addEventListener('keyup',e=>e.key==='Enter'&&calcPullups());
+});
 </script>
 </body>
 </html>
