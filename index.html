@@ -75,8 +75,8 @@ function calcPullups() {
 
   const w1Total    = roundUp5(bw + belt1);
   const warm1Total = bw;
-  const warm2Total = roundUp5(w1Total / 2);
-  const warm2Belt  = Math.max(0, warm2Total - bw);
+  const warm2Belt  = roundUp5(belt1 / 2);
+  const warm2Total = bw + warm2Belt;
 
   const w2Total = roundUp5(w1Total * 0.90);
   const belt2   = Math.max(0, w2Total - bw);
